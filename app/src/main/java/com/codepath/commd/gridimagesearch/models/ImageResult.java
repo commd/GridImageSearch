@@ -11,7 +11,7 @@ import java.util.ArrayList;
  * Created by Chuck on 2/27/15.
  */
 public class ImageResult implements Serializable {
-    private static final long serialVersionUID = -1L;
+    // private static final long serialVersionUID = -1L;
     public String fullUrl;
     public String thumbUrl;
     public String title;

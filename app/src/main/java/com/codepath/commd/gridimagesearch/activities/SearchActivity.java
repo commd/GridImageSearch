@@ -1,8 +1,8 @@
 package com.codepath.commd.gridimagesearch.activities;
 
 import android.content.Intent;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -11,9 +11,10 @@ import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.GridView;
 
-import com.codepath.commd.gridimagesearch.adapters.ImageResultsAdapter;
-import com.codepath.commd.gridimagesearch.models.ImageResult;
 import com.codepath.commd.gridimagesearch.R;
+import com.codepath.commd.gridimagesearch.adapters.ImageResultsAdapter;
+import com.codepath.commd.gridimagesearch.listeners.EndlessScrollListener;
+import com.codepath.commd.gridimagesearch.models.ImageResult;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
 
@@ -31,6 +32,7 @@ public class SearchActivity extends ActionBarActivity {
     private GridView gvResults;
     private ArrayList<ImageResult> imageResults;
     private ImageResultsAdapter aImageResults;  // I would have call this aImageResultsAdapter
+    private int start = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +51,22 @@ public class SearchActivity extends ActionBarActivity {
     private void setupViews() {
         etQuery = (EditText) findViewById(R.id.etQuery);
         gvResults = (GridView) findViewById(R.id.gvResults);
+        gvResults.setOnScrollListener(new EndlessScrollListener() {
+//            From Hints:
+//            @Override
+//            public void onLoadMore(int page, int totalItemsCount) {
+//                // Triggered only when new data needs to be appended to the list
+//                // Add whatever code is needed to append new items to your AdapterView
+//                customLoadMoreDataFromApi(page);
+//                // or customLoadMoreDataFromApi(totalItemsCount);
+//            }
+            @Override
+            public void onLoadMore(int page, int totalItemsCount) {
+                Log.i("DEBUG", "LOADMORE " + page + " " + totalItemsCount);
+                // loadMorePhotos(page);
+                downImages(true);   // should be true if it's the first search.
+            }
+        });
         gvResults.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -66,6 +84,26 @@ public class SearchActivity extends ActionBarActivity {
         });
     }
 
+/*    private void loadMorePhotos(int page){
+        String url = "https://ajax.googleapis.com/ajax/services/search/images?v=1.0&q=" + keyword + "&start=" + ((page-1) * 4);
+        // Log.i("DEBUG-APPEND-"+page, url);
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.get(url, null, new JsonHttpResponseHandler(){
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                JSONArray imagesJSON = null;
+                try {
+                    imagesJSON = response.getJSONObject("responseData").getJSONArray("results");
+                    // Log.i("DEBUG-APPEND", imagesJSON.toString());
+                    imageResults.addAll(ImageResult.fromJSONArray(imagesJSON));
+                    aImageResults.notifyDataSetChanged();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }*/
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -75,13 +113,28 @@ public class SearchActivity extends ActionBarActivity {
 
     // Fired whenever the button is pressed.
     public void onImageSearch(View v) {
+        downImages(true); // We run onImageSearch when the search button is clicked.
+                          // This is our first search for our this query so we run with true.
+    }
+
+
+    private void downImages (boolean firstSearch){
+        // int start; // change this !!!
+
+        if (firstSearch){
+            firstSearch = false;
+            start = 0;
+        } else {
+            start = start + 8;
+
+        }
         String query = etQuery.getText().toString();
         // Toast.makeText(this, "Search for: " + query, Toast.LENGTH_SHORT).show();
 
         AsyncHttpClient client = new AsyncHttpClient();
         // https://ajax.googleapis.com/ajax/services/search/images?v=1.0&q=android&rsz=8
         String searchUrl = "https://ajax.googleapis.com/ajax/services/search/images?v=1.0&q=" +
-                query + "&rsz=8";
+                query + "&rsz=8&Start=" + start;
         client.get(searchUrl, new JsonHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
@@ -99,7 +152,6 @@ public class SearchActivity extends ActionBarActivity {
                 Log.i("INFO", imageResults.toString());
             }
         });
-
     }
 
     @Override
